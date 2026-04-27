@@ -15,6 +15,13 @@ export const initialImportForm: ImportForm = {
   sourceLanguage: "en",
   targetLanguage: "es",
   sourceText: sampleSource,
+  preferences: {
+    tone: "faithful",
+    audience: "general",
+    preserveHonorifics: true,
+    preserveNames: true,
+    dialogueStyle: "natural",
+  },
 };
 
 export const stages: Array<{ id: StageId; label: string; helper: string }> = [
@@ -33,3 +40,17 @@ export const platforms: Array<{ id: Platform; label: string }> = [
   { id: "generic", label: "Generic ZIP" },
 ];
 
+export const reviewFilters = [
+  { id: "all", label: "All" },
+  { id: "needs-review", label: "Needs review" },
+  { id: "edited", label: "Edited" },
+  { id: "approved", label: "Approved" },
+  { id: "glossary", label: "Glossary hits" },
+] as const;
+
+export const toneOptions = [
+  { id: "faithful", label: "Faithful" },
+  { id: "cinematic", label: "Cinematic" },
+  { id: "plain", label: "Plain" },
+  { id: "dramatic", label: "Dramatic" },
+] as const;

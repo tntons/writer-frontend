@@ -191,7 +191,12 @@ export function buildLocalReview(form: ImportForm, translated = false): Workflow
     },
     cleaning,
     storyBible,
-    segments,
+    segments: segments.map((segment) => ({
+      ...segment,
+      notes: translated
+        ? `${segment.notes} Tone: ${form.preferences.tone}. Dialogue: ${form.preferences.dialogueStyle}.`
+        : segment.notes,
+    })),
     qaFindings: cleaning.map((finding) => ({
       id: makeLocalId("qa"),
       severity: finding.severity,
@@ -207,4 +212,3 @@ export function buildLocalReview(form: ImportForm, translated = false): Workflow
     },
   };
 }
-

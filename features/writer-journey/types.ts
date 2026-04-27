@@ -2,6 +2,15 @@ export type StageId = "import" | "bible" | "translate" | "review" | "qa" | "expo
 export type SegmentStatus = "draft" | "translated" | "edited" | "approved";
 export type Platform = "webnovel" | "wattpad" | "royal-road" | "generic";
 export type Severity = "info" | "warning" | "error";
+export type ReviewFilter = "all" | "needs-review" | "edited" | "approved" | "glossary";
+
+export type WriterPreferences = {
+  tone: "cinematic" | "plain" | "dramatic" | "faithful";
+  audience: "teen" | "adult" | "general";
+  preserveHonorifics: boolean;
+  preserveNames: boolean;
+  dialogueStyle: "natural" | "literal" | "localized";
+};
 
 export type WorkflowReview = {
   project: {
@@ -78,7 +87,21 @@ export type ImportForm = {
   sourceLanguage: string;
   targetLanguage: string;
   sourceText: string;
+  preferences: WriterPreferences;
 };
 
 export type JourneyActionState = "idle" | "working";
 
+export type ReadinessItem = {
+  id: string;
+  label: string;
+  ready: boolean;
+  detail: string;
+};
+
+export type NextAction = {
+  label: string;
+  detail: string;
+  stage: StageId;
+  action: "import" | "translate" | "review" | "qa" | "export";
+};

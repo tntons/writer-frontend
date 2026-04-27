@@ -4,7 +4,17 @@ import { useMemo, useState } from "react";
 import { initialImportForm, sampleSource } from "../constants";
 import { requestJson } from "../lib/api";
 import { buildLocalReview, createLocalId, isLocalProject } from "../lib/local-workflow";
-import type { ImportForm, JourneyActionState, Platform, StageId, WorkflowReview } from "../types";
+import type {
+  ImportForm,
+  JourneyActionState,
+  NextAction,
+  Platform,
+  ReadinessItem,
+  ReviewFilter,
+  StageId,
+  WorkflowReview,
+  WriterPreferences,
+} from "../types";
 
 export function useWriterJourney() {
   const [form, setForm] = useState<ImportForm>(initialImportForm);
@@ -14,6 +24,8 @@ export function useWriterJourney() {
   const [draftText, setDraftText] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>("webnovel");
   const [sourceView, setSourceView] = useState<"source" | "translation">("source");
+  const [reviewFilter, setReviewFilter] = useState<ReviewFilter>("all");
+  const [reviewQuery, setReviewQuery] = useState("");
   const [actionState, setActionState] = useState<JourneyActionState>("idle");
   const [message, setMessage] = useState("Ready to import your first chapter.");
 
@@ -25,6 +37,7 @@ export function useWriterJourney() {
   const lockedCount = review?.storyBible.filter((item) => item.locked).length ?? 0;
   const translatedCount = review?.segments.filter((segment) => segment.translatedText.trim()).length ?? 0;
   const approvedCount = review?.segments.filter((segment) => segment.status === "approved").length ?? 0;
+  const editedCount = review?.segments.filter((segment) => segment.status === "edited").length ?? 0;
 
   const completedStages = {
     import: Boolean(review),
@@ -35,8 +48,98 @@ export function useWriterJourney() {
     export: Boolean(review && review.exports.length > 0),
   } satisfies Record<StageId, boolean>;
 
+  const visibleSegments = useMemo(() => {
+    if (!review) return [];
+    const query = reviewQuery.trim().toLowerCase();
+    return review.segments.filter((segment) => {
+      const matchesQuery =
+        !query ||
+        segment.sourceText.toLowerCase().includes(query) ||
+        segment.translatedText.toLowerCase().includes(query) ||
+        segment.lockedTerms.some((term) => term.toLowerCase().includes(query));
+      const matchesFilter =
+        reviewFilter === "all" ||
+        (reviewFilter === "needs-review" && segment.status !== "approved") ||
+        (reviewFilter === "edited" && segment.status === "edited") ||
+        (reviewFilter === "approved" && segment.status === "approved") ||
+        (reviewFilter === "glossary" && segment.lockedTerms.length > 0);
+      return matchesQuery && matchesFilter;
+    });
+  }, [review, reviewFilter, reviewQuery]);
+
+  const readinessItems = useMemo<ReadinessItem[]>(() => {
+    if (!review) {
+      return [
+        { id: "source", label: "Chapter source", ready: Boolean(form.sourceText.trim()), detail: "Paste or upload a chapter" },
+        { id: "bible", label: "Story bible", ready: false, detail: "Import to extract names" },
+        { id: "translation", label: "Translation draft", ready: false, detail: "Generate a target-language draft" },
+        { id: "qa", label: "QA check", ready: false, detail: "Run checks before posting" },
+      ];
+    }
+
+    return [
+      { id: "source", label: "Chapter source", ready: review.project.wordCount > 0, detail: `${review.project.wordCount} words` },
+      { id: "bible", label: "Story bible", ready: lockedCount > 0, detail: `${lockedCount} locked terms` },
+      { id: "translation", label: "Translation draft", ready: translatedCount === review.segments.length, detail: `${translatedCount}/${review.segments.length} drafted` },
+      { id: "review", label: "Writer edits", ready: editedCount > 0 || approvedCount > 0, detail: `${editedCount} edited, ${approvedCount} approved` },
+      { id: "qa", label: "QA check", ready: review.qaFindings.length > 0, detail: `${review.qaFindings.length} findings tracked` },
+      { id: "export", label: "Export package", ready: review.exports.length > 0, detail: `${review.exports.length} package${review.exports.length === 1 ? "" : "s"}` },
+    ];
+  }, [approvedCount, editedCount, form.sourceText, lockedCount, review, translatedCount]);
+
+  const nextAction = useMemo<NextAction>(() => {
+    if (!review) {
+      return {
+        label: "Import chapter",
+        detail: "Clean the text and build the first story bible.",
+        stage: "import",
+        action: "import",
+      };
+    }
+    if (translatedCount === 0) {
+      return {
+        label: "Translate draft",
+        detail: "Generate editable target-language segments with locked terms.",
+        stage: "bible",
+        action: "translate",
+      };
+    }
+    if (editedCount === 0 && approvedCount === 0) {
+      return {
+        label: "Review first segment",
+        detail: "Open the segment editor and make the translation sound like you.",
+        stage: "review",
+        action: "review",
+      };
+    }
+    if (review.qaFindings.length === 0) {
+      return {
+        label: "Run QA",
+        detail: "Check empty translations, cleanup issues, and glossary consistency.",
+        stage: "review",
+        action: "qa",
+      };
+    }
+    return {
+      label: review.exports.length ? "Create another export" : "Create export",
+      detail: "Package the translated chapter, story bible, and platform metadata.",
+      stage: "export",
+      action: "export",
+    };
+  }, [approvedCount, editedCount, review, translatedCount]);
+
   function updateForm(field: keyof ImportForm, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function updatePreference(field: keyof WriterPreferences, value: WriterPreferences[keyof WriterPreferences]) {
+    setForm((current) => ({
+      ...current,
+      preferences: {
+        ...current.preferences,
+        [field]: value,
+      },
+    }));
   }
 
   function applyReview(payload: WorkflowReview, nextStage?: StageId) {
@@ -283,6 +386,26 @@ export function useWriterJourney() {
     setActiveStage("review");
   }
 
+  async function runNextAction() {
+    if (nextAction.action === "import") {
+      await importChapter();
+      return;
+    }
+    if (nextAction.action === "translate") {
+      await translateProject();
+      return;
+    }
+    if (nextAction.action === "review") {
+      setActiveStage("review");
+      return;
+    }
+    if (nextAction.action === "qa") {
+      await runQa();
+      return;
+    }
+    await createExport();
+  }
+
   return {
     form,
     review,
@@ -291,17 +414,26 @@ export function useWriterJourney() {
     draftText,
     selectedPlatform,
     sourceView,
+    reviewFilter,
+    reviewQuery,
     actionState,
     message,
     lockedCount,
     translatedCount,
     approvedCount,
+    editedCount,
     completedStages,
+    visibleSegments,
+    readinessItems,
+    nextAction,
     setActiveStage,
     setDraftText,
     setSelectedPlatform,
     setSourceView,
+    setReviewFilter,
+    setReviewQuery,
     updateForm,
+    updatePreference,
     loadNightmareSample,
     importChapter,
     toggleStoryBible,
@@ -312,6 +444,6 @@ export function useWriterJourney() {
     createExport,
     handleTextFile,
     selectSegment,
+    runNextAction,
   };
 }
-

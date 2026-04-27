@@ -2,12 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { stages, platforms } from "./constants";
+import { CheckCircle2, Download, FileText, ListChecks, Play, Search, Settings2, Upload } from "lucide-react";
+import { platforms, reviewFilters, stages, toneOptions } from "./constants";
 import { apiBase } from "./lib/api";
 import { classNames, splitParagraphs } from "./lib/format";
 import { useWriterJourney } from "./hooks/use-writer-journey";
 import { Badge, Metric, StageButton } from "./components/common";
-import type { Platform } from "./types";
+import type { Platform, ReviewFilter, WriterPreferences } from "./types";
 
 export function WriterJourneyWorkspace() {
   const {
@@ -18,17 +19,26 @@ export function WriterJourneyWorkspace() {
     draftText,
     selectedPlatform,
     sourceView,
+    reviewFilter,
+    reviewQuery,
     actionState,
     message,
     lockedCount,
     translatedCount,
     approvedCount,
+    editedCount,
     completedStages,
+    visibleSegments,
+    readinessItems,
+    nextAction,
     setActiveStage,
     setDraftText,
     setSelectedPlatform,
     setSourceView,
+    setReviewFilter,
+    setReviewQuery,
     updateForm,
+    updatePreference,
     loadNightmareSample,
     importChapter,
     toggleStoryBible,
@@ -39,6 +49,7 @@ export function WriterJourneyWorkspace() {
     createExport,
     handleTextFile,
     selectSegment,
+    runNextAction,
   } = useWriterJourney();
 
   return (
@@ -118,6 +129,23 @@ export function WriterJourneyWorkspace() {
                 )}
               </div>
             </div>
+
+            <div className="mt-5 flex flex-col gap-3 rounded-lg border border-white/10 bg-[#0d0d0d] p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase text-zinc-500">Next action</p>
+                <p className="mt-1 text-sm font-semibold text-white">{nextAction.label}</p>
+                <p className="mt-1 text-xs leading-5 text-zinc-500">{nextAction.detail}</p>
+              </div>
+              <button
+                type="button"
+                onClick={runNextAction}
+                disabled={actionState === "working"}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-lime-300 px-3 text-sm font-semibold text-black hover:bg-lime-200 disabled:opacity-50"
+              >
+                <Play className="h-4 w-4" aria-hidden="true" />
+                Continue
+              </button>
+            </div>
           </header>
 
           <div className="grid gap-6 px-5 py-6 xl:grid-cols-[minmax(0,1fr)_360px] lg:px-8">
@@ -136,14 +164,18 @@ export function WriterJourneyWorkspace() {
                       type="button"
                       onClick={loadNightmareSample}
                       disabled={actionState === "working"}
-                      className="h-10 rounded-md border border-white/10 px-3 text-sm font-semibold text-zinc-200 hover:border-white/30 disabled:opacity-50"
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-white/10 px-3 text-sm font-semibold text-zinc-200 hover:border-white/30 disabled:opacity-50"
                     >
+                      <FileText className="h-4 w-4" aria-hidden="true" />
                       Load full Nightmare sample
                     </button>
                   </div>
 
                   <label className="mt-5 flex cursor-pointer flex-col gap-2 rounded-lg border border-dashed border-white/15 bg-black p-4 hover:border-lime-300/50">
-                    <span className="text-sm font-semibold text-white">Upload a .txt chapter</span>
+                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-white">
+                      <Upload className="h-4 w-4" aria-hidden="true" />
+                      Upload a .txt chapter
+                    </span>
                     <span className="text-xs leading-5 text-zinc-500">
                       The text loads into the editor first, so you can clean or adjust it before importing.
                     </span>
@@ -218,13 +250,71 @@ export function WriterJourneyWorkspace() {
                     />
                   </label>
 
+                  <div className="mt-4 rounded-lg border border-white/10 bg-black p-4">
+                    <div className="flex items-center gap-2">
+                      <Settings2 className="h-4 w-4 text-lime-200" aria-hidden="true" />
+                      <p className="text-sm font-semibold text-white">Translation preferences</p>
+                    </div>
+                    <div className="mt-4 grid gap-4 md:grid-cols-2">
+                      <label className="block">
+                        <span className="text-xs font-medium text-zinc-500">Tone</span>
+                        <select
+                          value={form.preferences.tone}
+                          onChange={(event) => updatePreference("tone", event.target.value as WriterPreferences["tone"])}
+                          className="mt-2 h-10 w-full rounded-md border border-white/10 bg-[#050505] px-3 text-sm text-white outline-none focus:border-lime-300/60"
+                        >
+                          {toneOptions.map((option) => (
+                            <option key={option.id} value={option.id}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="block">
+                        <span className="text-xs font-medium text-zinc-500">Dialogue</span>
+                        <select
+                          value={form.preferences.dialogueStyle}
+                          onChange={(event) =>
+                            updatePreference("dialogueStyle", event.target.value as WriterPreferences["dialogueStyle"])
+                          }
+                          className="mt-2 h-10 w-full rounded-md border border-white/10 bg-[#050505] px-3 text-sm text-white outline-none focus:border-lime-300/60"
+                        >
+                          <option value="natural">Natural</option>
+                          <option value="literal">Literal</option>
+                          <option value="localized">Localized</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                      <label className="flex items-center gap-2 text-sm text-zinc-300">
+                        <input
+                          type="checkbox"
+                          checked={form.preferences.preserveNames}
+                          onChange={(event) => updatePreference("preserveNames", event.target.checked)}
+                          className="h-4 w-4 accent-lime-300"
+                        />
+                        Preserve character names
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-zinc-300">
+                        <input
+                          type="checkbox"
+                          checked={form.preferences.preserveHonorifics}
+                          onChange={(event) => updatePreference("preserveHonorifics", event.target.checked)}
+                          className="h-4 w-4 accent-lime-300"
+                        />
+                        Preserve honorifics
+                      </label>
+                    </div>
+                  </div>
+
                   <div className="mt-5 flex flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={importChapter}
                       disabled={actionState === "working" || !form.sourceText.trim()}
-                      className="h-11 rounded-md bg-lime-300 px-4 text-sm font-semibold text-black hover:bg-lime-200 disabled:opacity-50"
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-lime-300 px-4 text-sm font-semibold text-black hover:bg-lime-200 disabled:opacity-50"
                     >
+                      <ListChecks className="h-4 w-4" aria-hidden="true" />
                       Import and recognize names
                     </button>
                     <Link
@@ -251,8 +341,9 @@ export function WriterJourneyWorkspace() {
                       type="button"
                       onClick={translateProject}
                       disabled={actionState === "working"}
-                      className="h-10 rounded-md bg-lime-300 px-3 text-sm font-semibold text-black hover:bg-lime-200 disabled:opacity-50"
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-lime-300 px-3 text-sm font-semibold text-black hover:bg-lime-200 disabled:opacity-50"
                     >
+                      <Play className="h-4 w-4" aria-hidden="true" />
                       Translate with locked terms
                     </button>
                   </div>
@@ -306,8 +397,9 @@ export function WriterJourneyWorkspace() {
                     type="button"
                     onClick={translateProject}
                     disabled={actionState === "working"}
-                    className="mt-5 h-11 rounded-md bg-lime-300 px-4 text-sm font-semibold text-black hover:bg-lime-200 disabled:opacity-50"
+                    className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-md bg-lime-300 px-4 text-sm font-semibold text-black hover:bg-lime-200 disabled:opacity-50"
                   >
+                    <Play className="h-4 w-4" aria-hidden="true" />
                     Generate translation draft
                   </button>
                 </section>
@@ -328,16 +420,18 @@ export function WriterJourneyWorkspace() {
                         type="button"
                         onClick={runQa}
                         disabled={actionState === "working"}
-                        className="h-10 rounded-md border border-white/10 px-3 text-sm font-semibold text-zinc-200 hover:border-white/30 disabled:opacity-50"
+                        className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-white/10 px-3 text-sm font-semibold text-zinc-200 hover:border-white/30 disabled:opacity-50"
                       >
+                        <ListChecks className="h-4 w-4" aria-hidden="true" />
                         Run QA
                       </button>
                       <button
                         type="button"
                         onClick={approveAll}
                         disabled={actionState === "working"}
-                        className="h-10 rounded-md bg-lime-300 px-3 text-sm font-semibold text-black hover:bg-lime-200 disabled:opacity-50"
+                        className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-lime-300 px-3 text-sm font-semibold text-black hover:bg-lime-200 disabled:opacity-50"
                       >
+                        <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                         Approve all
                       </button>
                     </div>
@@ -348,8 +442,36 @@ export function WriterJourneyWorkspace() {
                       <div className="border-b border-white/10 p-3 text-xs font-medium uppercase text-zinc-500">
                         Segments
                       </div>
+                      <div className="border-b border-white/10 p-3">
+                        <label className="flex h-10 items-center gap-2 rounded-md border border-white/10 bg-[#050505] px-3">
+                          <Search className="h-4 w-4 text-zinc-500" aria-hidden="true" />
+                          <input
+                            value={reviewQuery}
+                            onChange={(event) => setReviewQuery(event.target.value)}
+                            placeholder="Search source, draft, terms"
+                            className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-zinc-600"
+                          />
+                        </label>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {reviewFilters.map((filter) => (
+                            <button
+                              key={filter.id}
+                              type="button"
+                              onClick={() => setReviewFilter(filter.id as ReviewFilter)}
+                              className={classNames(
+                                "h-8 rounded-md border px-2 text-xs font-semibold",
+                                reviewFilter === filter.id
+                                  ? "border-lime-300/50 bg-lime-300/10 text-lime-100"
+                                  : "border-white/10 text-zinc-400 hover:border-white/30",
+                              )}
+                            >
+                              {filter.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                       <div className="max-h-[520px] overflow-auto">
-                        {review.segments.map((segment) => (
+                        {visibleSegments.map((segment) => (
                           <button
                             key={segment.id}
                             type="button"
@@ -366,6 +488,9 @@ export function WriterJourneyWorkspace() {
                             <p className="mt-2 line-clamp-2 text-xs leading-5 text-zinc-500">{segment.sourceText}</p>
                           </button>
                         ))}
+                        {!visibleSegments.length ? (
+                          <div className="p-4 text-sm leading-6 text-zinc-500">No segments match this review filter.</div>
+                        ) : null}
                       </div>
                     </div>
 
@@ -390,8 +515,9 @@ export function WriterJourneyWorkspace() {
                             type="button"
                             onClick={saveSegment}
                             disabled={actionState === "working"}
-                            className="h-11 rounded-md bg-lime-300 px-4 text-sm font-semibold text-black hover:bg-lime-200 disabled:opacity-50"
+                            className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-lime-300 px-4 text-sm font-semibold text-black hover:bg-lime-200 disabled:opacity-50"
                           >
+                            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                             Save segment
                           </button>
                           <Badge value={selectedSegment.status} />
@@ -421,8 +547,9 @@ export function WriterJourneyWorkspace() {
                       type="button"
                       onClick={runQa}
                       disabled={actionState === "working"}
-                      className="h-10 rounded-md border border-white/10 px-3 text-sm font-semibold text-zinc-200 hover:border-white/30 disabled:opacity-50"
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-white/10 px-3 text-sm font-semibold text-zinc-200 hover:border-white/30 disabled:opacity-50"
                     >
+                      <ListChecks className="h-4 w-4" aria-hidden="true" />
                       Refresh QA
                     </button>
                   </div>
@@ -473,8 +600,9 @@ export function WriterJourneyWorkspace() {
                         type="button"
                         onClick={createExport}
                         disabled={actionState === "working"}
-                        className="h-10 rounded-md bg-lime-300 px-3 text-sm font-semibold text-black hover:bg-lime-200 disabled:opacity-50"
+                        className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-lime-300 px-3 text-sm font-semibold text-black hover:bg-lime-200 disabled:opacity-50"
                       >
+                        <Download className="h-4 w-4" aria-hidden="true" />
                         Create export
                       </button>
                     </div>
@@ -577,6 +705,42 @@ export function WriterJourneyWorkspace() {
                     value={review ? `${approvedCount}/${review.segments.length}` : "0"}
                     helper="Ready to post"
                   />
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-white/10 bg-[#0d0d0d] p-5">
+                <p className="text-xs font-medium uppercase text-zinc-500">Platform readiness</p>
+                <div className="mt-3 grid gap-2">
+                  {readinessItems.map((item) => (
+                    <div key={item.id} className="flex items-start gap-3 rounded-md bg-black p-3">
+                      <CheckCircle2
+                        className={classNames("mt-0.5 h-4 w-4", item.ready ? "text-lime-300" : "text-zinc-600")}
+                        aria-hidden="true"
+                      />
+                      <div>
+                        <p className="text-sm font-semibold text-white">{item.label}</p>
+                        <p className="mt-1 text-xs leading-5 text-zinc-500">{item.detail}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-white/10 bg-[#0d0d0d] p-5">
+                <p className="text-xs font-medium uppercase text-zinc-500">Writer controls</p>
+                <div className="mt-3 grid gap-2 text-sm text-zinc-300">
+                  <div className="flex items-center justify-between gap-3 rounded-md bg-black px-3 py-2">
+                    <span>Tone</span>
+                    <span className="font-semibold text-white">{form.preferences.tone}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 rounded-md bg-black px-3 py-2">
+                    <span>Dialogue</span>
+                    <span className="font-semibold text-white">{form.preferences.dialogueStyle}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 rounded-md bg-black px-3 py-2">
+                    <span>Edited</span>
+                    <span className="font-semibold text-white">{editedCount}</span>
+                  </div>
                 </div>
               </div>
 
