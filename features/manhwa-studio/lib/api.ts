@@ -1,4 +1,4 @@
-import { apiBase, requestJson } from "@/features/writer-journey/lib/api";
+import { apiBase, requestJson } from "@/features/shared/lib/api-client";
 import type { ManhwaForm, ManhwaProjectDetail } from "../types";
 
 export { apiBase };

@@ -100,6 +100,20 @@ export function WriterJourneyWorkspace() {
             >
               Turn this novel into manhwa
             </Link>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+              <Link
+                href="/billing"
+                className="rounded-md border border-white/10 bg-white/[0.03] px-3 py-3 text-sm font-semibold text-zinc-200 hover:border-white/30"
+              >
+                Billing
+              </Link>
+              <Link
+                href="/auth"
+                className="rounded-md border border-white/10 bg-white/[0.03] px-3 py-3 text-sm font-semibold text-zinc-200 hover:border-white/30"
+              >
+                Account
+              </Link>
+            </div>
 
             <div className="mt-auto rounded-lg border border-white/10 bg-[#0d0d0d] p-4">
               <p className="text-xs font-medium uppercase text-zinc-500">Backend</p>

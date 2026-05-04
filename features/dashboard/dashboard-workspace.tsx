@@ -481,6 +481,18 @@ export function DashboardWorkspace() {
                           >
                             Open manhwa studio
                           </a>
+                          <a
+                            href="/billing"
+                            className="grid h-11 place-items-center rounded-md border border-white/10 px-4 text-sm font-semibold text-zinc-200 hover:border-white/30"
+                          >
+                            Open billing
+                          </a>
+                          <a
+                            href="/auth"
+                            className="grid h-11 place-items-center rounded-md border border-white/10 px-4 text-sm font-semibold text-zinc-200 hover:border-white/30"
+                          >
+                            Account
+                          </a>
                           <button
                             type="button"
                             onClick={() => setActiveView("story")}

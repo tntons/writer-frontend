@@ -16,12 +16,15 @@ V1 is for solo authors who already own a novel and want to reach more readers wi
 6. The author approves chapters.
 7. The system builds a platform-ready package for manual posting.
 8. The author can open Manhwa Studio to convert prose into panel prompts, character-consistent storyboard images, and regeneration notes.
+9. The author signs in through OAuth-ready backend sessions and manages a mock subscription/credit balance.
 
 ## V1 Scope
 
 - Black author workspace with library, story bible, translation editor, export studio, billing, and settings.
 - Demo-mode data so the interface is usable without backend credentials.
 - Clear integration points for Clerk auth, Stripe billing, and backend translation jobs.
+- OAuth-ready account page using backend HttpOnly cookies without committed provider secrets.
+- Billing page for plans, mock checkout completion, portal preview, and credit top-ups.
 - Platform-ready package flow before true external auto-posting.
 - Manhwa Studio with style presets, panel count control, prompt copying, and per-panel regeneration.
 

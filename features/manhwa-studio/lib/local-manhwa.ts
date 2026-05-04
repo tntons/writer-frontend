@@ -44,8 +44,9 @@ export function createLocalManhwaProject(form: ManhwaForm, variant?: { panelId: 
     const order = index + 1;
     const sentence = sentences[index % Math.max(sentences.length, 1)] ?? cleaned;
     const dialogue = extractDialogue(sentence);
-    const seed = hashText(`${form.title}:${order}:${sentence}:${variant?.prompt ?? ""}`);
     const panelId = `local-panel-${order}`;
+    const revisionPrompt = variant?.panelId === panelId ? variant.prompt : "";
+    const seed = hashText(`${form.title}:${order}:${sentence}:${revisionPrompt}`);
     const sceneSummary = sentence.length > 160 ? `${sentence.slice(0, 157)}...` : sentence;
     const camera = ["wide establishing shot", "close-up reaction shot", "low angle reveal", "over-the-shoulder frame"][
       index % 4
@@ -64,7 +65,7 @@ export function createLocalManhwaProject(form: ManhwaForm, variant?: { panelId: 
         sceneSummary,
         `Characters: ${extractNames(sentence).join(", ") || "novel cast"}.`,
         `Camera: ${camera}. Mood: ${mood}.`,
-        variant?.panelId === panelId ? `Revision: ${variant.prompt}.` : "",
+        revisionPrompt ? `Revision: ${revisionPrompt}.` : "",
       ].join(" "),
       negativePrompt: "blurry, watermark, logo, unreadable text, distorted face",
       camera,

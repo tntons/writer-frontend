@@ -1,4 +1,4 @@
-import type { ManhwaAspectRatio, ManhwaStylePreset } from "./types";
+import type { ManhwaAspectRatio, ManhwaForm, ManhwaStylePreset } from "./types";
 
 export const styleOptions: Array<{
   id: ManhwaStylePreset;
@@ -31,3 +31,11 @@ The officer frowned when Sunny said he was a carrier of the Nightmare Spell. A m
 Everything became black. In the darkness, a familiar voice rang out.
 
 [Aspirant! Welcome to the Nightmare Spell. Prepare for your First Trial...]`;
+
+export const initialManhwaForm: ManhwaForm = {
+  title: "Nightmare Begins",
+  sourceText: startingSource,
+  stylePreset: "cinematic",
+  aspectRatio: "9:16",
+  panelCount: 6,
+};

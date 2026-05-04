@@ -1,5 +1,7 @@
 export type ManhwaStylePreset = "webtoon" | "ink" | "cinematic" | "shojo";
 export type ManhwaAspectRatio = "9:16" | "4:5" | "1:1";
+export type ManhwaProjectStatus = "draft" | "storyboard_ready" | "generating" | "needs_review" | "completed";
+export type ManhwaPanelStatus = "draft" | "prompt_ready" | "image_ready" | "regenerated";
 
 export type ManhwaForm = {
   title: string;
@@ -14,7 +16,7 @@ export type ManhwaProject = {
   title: string;
   stylePreset: ManhwaStylePreset;
   aspectRatio: ManhwaAspectRatio;
-  status: string;
+  status: ManhwaProjectStatus;
   panelCount: number;
   estimatedCredits: number;
   consumedCredits: number;
@@ -35,7 +37,7 @@ export type ManhwaPanel = {
   mood: string;
   characters: string[];
   setting: string;
-  status: string;
+  status: ManhwaPanelStatus;
   imageUrl: string;
   seed: number;
   createdAt: string;
