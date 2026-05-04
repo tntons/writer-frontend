@@ -94,6 +94,13 @@ export function WriterJourneyWorkspace() {
               ))}
             </nav>
 
+            <Link
+              href="/manhwa"
+              className="rounded-md border border-lime-300/30 bg-lime-300/10 px-3 py-3 text-sm font-semibold text-lime-100 hover:border-lime-300/60"
+            >
+              Turn this novel into manhwa
+            </Link>
+
             <div className="mt-auto rounded-lg border border-white/10 bg-[#0d0d0d] p-4">
               <p className="text-xs font-medium uppercase text-zinc-500">Backend</p>
               <p className="mt-2 text-sm leading-6 text-zinc-300">{message}</p>

@@ -475,6 +475,12 @@ export function DashboardWorkspace() {
                           >
                             Open writer journey
                           </a>
+                          <a
+                            href="/manhwa"
+                            className="grid h-11 place-items-center rounded-md border border-lime-300/30 px-4 text-sm font-semibold text-lime-100 hover:border-lime-300/60"
+                          >
+                            Open manhwa studio
+                          </a>
                           <button
                             type="button"
                             onClick={() => setActiveView("story")}
